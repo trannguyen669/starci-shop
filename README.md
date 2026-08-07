@@ -1,4 +1,4 @@
-# StarCi Shop Backend
+﻿# StarCi Shop Backend
 
 Backend API cho dự án StarCi Shop, được xây dựng bằng NestJS, TypeScript, TypeORM và PostgreSQL.
 
@@ -130,6 +130,26 @@ Smoke test nhanh:
 curl http://localhost:3000/health
 ```
 
+Smoke test thực tế đã chạy trên Windows PowerShell:
+
+```powershell
+curl.exe -i http://localhost:3000/health
+```
+
+Output thực tế:
+
+```http
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Content-Type: application/json; charset=utf-8
+Content-Length: 15
+ETag: W/"f-VaSQ4oDUiZblZNAEkkN+sX+q3Sg"
+Date: Fri, 07 Aug 2026 03:37:54 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"status":"ok"}
+```
 Endpoint này sẽ gọi xuống PostgreSQL bằng câu query:
 
 ```sql
