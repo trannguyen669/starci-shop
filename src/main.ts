@@ -1,16 +1,31 @@
 import { NestFactory } from '@nestjs/core';
+
 import { AppModule } from './app.module';
-import { ConfigService } from '@nestjs/config';
+import { loadEnv } from './config/env';
+import { logger } from './logger';
+import { requestId } from './middleware/request-id.middleware';
 
 async function bootstrap() {
+  const env = loadEnv();
+
+  logger.info('Environment validated');
+
+
+
   const app = await NestFactory.create(AppModule);
 
-  const configService = app.get(ConfigService);
+   app.use(requestId);
 
-  app.enableShutdownHooks();
+  app.enableShutdownHooks();// tắt app có trật tự
 
-  const port = configService.get<number>('PORT') ?? 3000;
-  
-  await app.listen(port);
+  await app.listen(env.PORT);
+
+  logger.info(
+    {
+      port: env.PORT,
+    },
+    'StarCi Shop backend started',
+  );
 }
+
 bootstrap();

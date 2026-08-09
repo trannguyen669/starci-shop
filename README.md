@@ -1,8 +1,10 @@
 ﻿# StarCi Shop Backend
 
-Backend API cho dự án StarCi Shop, được xây dựng bằng NestJS, TypeScript, TypeORM và PostgreSQL.
+Backend API cho StarCi Shop, được xây dựng bằng NestJS, TypeScript, TypeORM, PostgreSQL, Zod và Pino.
 
-## Kiến trúc
+Mục tiêu hiện tại của backend là boot theo chuẩn 12-factor: cấu hình được đọc từ môi trường, validate ngay lúc khởi động, fail-fast nếu thiếu hoặc sai biến bắt buộc, và mọi request có `requestId` để truy vết log từ đầu tới cuối.
+
+## Kiến Trúc
 
 Dự án đang đi theo hướng tách lớp đơn giản:
 
@@ -13,74 +15,149 @@ HTTP layer -> Domain layer -> Data layer
 - `src/http`: controller, nhận request và trả response.
 - `src/domain`: service xử lý logic nghiệp vụ.
 - `src/data`: repository hoặc adapter làm việc với database/hạ tầng ngoài.
-- `src/app.module.ts`: cấu hình module chính, dependency injection, config và database.
-- `src/main.ts`: bootstrap NestJS application.
+- `src/config`: schema và loader cho typed environment config.
+- `src/context`: request context dựa trên `AsyncLocalStorage`.
+- `src/middleware`: middleware gắn correlation id cho mỗi request.
+- `src/logger.ts`: Pino logger có redact secret và helper `getLogger()`.
+- `src/app.module.ts`: cấu hình Nest module và TypeORM.
+- `src/main.ts`: bootstrap app, validate env trước khi listen port.
 
 Luồng hiện tại của health check:
 
 ```text
 GET /health
+  -> requestId middleware
   -> HealthController
   -> HealthService
   -> DbRepository.ping()
   -> PostgreSQL SELECT 1
 ```
 
-## Công nghệ chính
+## Công Nghệ Chính
 
 - Node.js
 - NestJS 11
 - TypeScript
 - TypeORM
 - PostgreSQL
+- Zod
+- Pino
 - Jest
 - ESLint
 - Prettier
 
-## Yêu cầu môi trường
-
-- Node.js đã cài sẵn.
-- PostgreSQL đang chạy.
-- Database đã được tạo trước khi chạy app.
-
-Ví dụ database mặc định theo file `.env` hiện tại:
-
-```text
-starci_shop
-```
-
-## Cài đặt
+## Cài Đặt
 
 ```bash
 npm install
 ```
 
-## Cấu hình môi trường
+## Cấu Hình Môi Trường
 
-Tạo file `.env` ở thư mục gốc dự án:
+Tạo file `.env` ở thư mục gốc dự án.
 
 ```env
+NODE_ENV=development
 PORT=3000
-
-DB_HOST=localhost
-DB_PORT=5432
-DB_USERNAME=postgres
-DB_PASSWORD=your_postgres_password
-DB_DATABASE=starci_shop
+DATABASE_URL=postgresql://postgres:your_postgres_password@localhost:5432/starci_shop
+JWT_SECRET=your-super-secret-key
+LOG_LEVEL=info
 ```
 
-Ý nghĩa các biến:
+Các biến môi trường được định nghĩa tập trung trong `src/config/env.schema.ts`.
 
-| Biến | Mô tả |
-| --- | --- |
-| `PORT` | Port HTTP server sẽ lắng nghe. Mặc định trong code là `3000` nếu không cấu hình. |
-| `DB_HOST` | Host PostgreSQL. |
-| `DB_PORT` | Port PostgreSQL. |
-| `DB_USERNAME` | Username kết nối database. |
-| `DB_PASSWORD` | Password kết nối database. |
-| `DB_DATABASE` | Tên database của ứng dụng. |
+| Biến | Bắt buộc | Mô tả |
+| --- | --- | --- |
+| `NODE_ENV` | Không | `development`, `test`, hoặc `production`. Mặc định `development`. |
+| `PORT` | Không | Port HTTP server. Mặc định `3000`. |
+| `DATABASE_URL` | Có | PostgreSQL connection string. |
+| `JWT_SECRET` | Có | JWT secret, tối thiểu 16 ký tự. |
+| `LOG_LEVEL` | Không | `debug`, `info`, `warn`, hoặc `error`. Mặc định `info`. |
 
-## Chạy ứng dụng
+App không đọc `process.env.X` rải rác trong codebase. Tất cả env đi qua `loadEnv()` và được validate bằng Zod.
+
+## Typed Config Và Fail-Fast
+
+Khi app khởi động, `loadEnv()` parse `process.env` qua Zod schema. Nếu thiếu hoặc sai biến bắt buộc, app in lỗi rõ ràng và thoát với exit code khác `0`.
+
+Ví dụ smoke test khi thiếu `DATABASE_URL` và `JWT_SECRET`:
+
+```text
+[12:02:21 PM] Starting compilation in watch mode...
+
+[12:02:24 PM] Found 0 errors. Watching for file changes.
+
+Invalid environment: [
+  {
+    expected: 'string',
+    code: 'invalid_type',
+    path: [ 'DATABASE_URL' ],
+    message: 'Invalid input: expected string, received undefined'
+  },
+  {
+    expected: 'string',
+    code: 'invalid_type',
+    path: [ 'JWT_SECRET' ],
+    message: 'Invalid input: expected string, received undefined'
+  }
+]
+```
+
+Điều này giúp app không boot nửa vời khi config database hoặc JWT bị sai.
+
+## Logging Và Request Correlation
+
+App dùng Pino để phát structured logs.
+
+- Dev mode dùng `pino-pretty` để log dễ đọc khi phát triển.
+- Production/test không dùng pretty transport, phù hợp cho log JSON machine-readable.
+- Logger có `redact` để che thông tin nhạy cảm như authorization header, password và JWT secret.
+- Mỗi request có một `requestId`.
+- Nếu client gửi header `x-request-id`, app sẽ tái sử dụng id đó.
+- Nếu client không gửi, app tự tạo UUID.
+- `requestId` được trả lại cho client qua response header `x-request-id`.
+- `AsyncLocalStorage` giúp `getLogger()` trong service/repository vẫn lấy đúng logger của request hiện tại.
+
+Ví dụ gọi health check với request id tự truyền vào:
+
+```powershell
+curl.exe -i http://localhost:3000/health -H "x-request-id: abc-123"
+```
+
+Response:
+
+```http
+HTTP/1.1 200 OK
+X-Powered-By: Express
+x-request-id: abc-123
+Content-Type: application/json; charset=utf-8
+Content-Length: 15
+ETag: W/"f-VaSQ4oDUiZblZNAEkkN+sX+q3Sg"
+Date: Sun, 09 Aug 2026 05:03:24 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"status":"ok"}
+```
+
+Log dev thực tế:
+
+```text
+[12:03:24.397] INFO (27116): request received
+    requestId: "abc-123"
+    method: "GET"
+    url: "/health"
+[12:03:24.397] INFO (27116): checking health
+    requestId: "abc-123"
+[12:03:24.397] INFO (27116): pinging database
+    requestId: "abc-123"
+[12:03:24.412] INFO (27116): health check passed
+    requestId: "abc-123"
+```
+
+Như vậy một request có thể được truy vết từ middleware, xuống service, xuống repository bằng cùng một `requestId`.
+
+## Chạy Ứng Dụng
 
 Chạy ở môi trường development với watch mode:
 
@@ -106,17 +183,15 @@ Chạy bản đã build:
 npm run start:prod
 ```
 
-## API hiện có
+## API Hiện Có
 
-### Health check
-
-Kiểm tra server và kết nối database:
+### Health Check
 
 ```http
 GET /health
 ```
 
-Response thành công: `200 OK`
+Response thành công:
 
 ```json
 {
@@ -124,39 +199,63 @@ Response thành công: `200 OK`
 }
 ```
 
-Smoke test nhanh:
-
-```bash
-curl http://localhost:3000/health
-```
-
-Smoke test thực tế đã chạy trên Windows PowerShell:
-
-```powershell
-curl.exe -i http://localhost:3000/health
-```
-
-Output thực tế:
-
-```http
-HTTP/1.1 200 OK
-X-Powered-By: Express
-Content-Type: application/json; charset=utf-8
-Content-Length: 15
-ETag: W/"f-VaSQ4oDUiZblZNAEkkN+sX+q3Sg"
-Date: Fri, 07 Aug 2026 03:37:54 GMT
-Connection: keep-alive
-Keep-Alive: timeout=5
-
-{"status":"ok"}
-```
-Endpoint này sẽ gọi xuống PostgreSQL bằng câu query:
+Endpoint này gọi xuống PostgreSQL bằng:
 
 ```sql
 SELECT 1
 ```
 
-Vì vậy nếu database chưa chạy hoặc cấu hình database sai, `/health` sẽ lỗi.
+Nếu database chưa chạy hoặc `DATABASE_URL` sai, health check sẽ lỗi hoặc app sẽ không boot được nếu URL không hợp lệ.
+
+## Smoke Test
+
+### 1. Fail-Fast Khi Thiếu Env
+
+Chạy app khi thiếu biến bắt buộc:
+
+```bash
+npm run start:dev
+```
+
+Kết quả mong đợi:
+
+```text
+Invalid environment: [...]
+```
+
+Process thoát, app không mở port.
+
+### 2. Response Có `x-request-id`
+
+```powershell
+curl.exe -i http://localhost:3000/health -H "x-request-id: abc-123"
+```
+
+Kết quả mong đợi:
+
+```http
+HTTP/1.1 200 OK
+x-request-id: abc-123
+
+{"status":"ok"}
+```
+
+### 3. Log Có Cùng `requestId`
+
+Dev log mong đợi:
+
+```text
+request received
+    requestId: "abc-123"
+checking health
+    requestId: "abc-123"
+pinging database
+    requestId: "abc-123"
+health check passed
+    requestId: "abc-123"
+```
+
+Trong production/test, Pino phát log dạng JSON để các hệ thống như Loki, ELK hoặc CloudWatch dễ ingest.
 
 ## Scripts
 
@@ -181,13 +280,13 @@ Database được cấu hình trong `TypeOrmModule.forRootAsync()` tại `src/ap
 Hiện tại app dùng:
 
 ```ts
-synchronize: true
 autoLoadEntities: true
+synchronize: true
 ```
 
-Lưu ý: `synchronize: true` tiện khi phát triển local, nhưng không nên bật ở production vì TypeORM có thể tự thay đổi schema database.
+`synchronize: true` tiện khi phát triển local, nhưng không nên bật ở production vì TypeORM có thể tự thay đổi schema database.
 
-## Graceful shutdown
+## Graceful Shutdown
 
 Trong `src/main.ts`, app có bật:
 
@@ -195,8 +294,12 @@ Trong `src/main.ts`, app có bật:
 app.enableShutdownHooks();
 ```
 
-Dòng này giúp NestJS gọi các lifecycle hook khi process nhận tín hiệu shutdown như `SIGTERM` hoặc `SIGINT`. Nó hữu ích để đóng kết nối database, queue, cache hoặc các tài nguyên nền một cách gọn gàng.
+Dòng này giúp NestJS gọi lifecycle hook khi process nhận tín hiệu shutdown như `SIGTERM` hoặc `SIGINT`, hữu ích để đóng database connection, queue, cache hoặc tài nguyên nền một cách gọn gàng.
 
-## Ghi chú test
+## Ghi Chú Test
 
-E2E test trong `test/app.e2e-spec.ts` gọi `GET /health`, nên cần PostgreSQL đang chạy và file `.env` đúng cấu hình database trước khi chạy `npm run test:e2e`.
+E2E test trong `test/app.e2e-spec.ts` gọi `GET /health`, nên cần PostgreSQL đang chạy và `.env` hợp lệ trước khi chạy:
+
+```bash
+npm run test:e2e
+```
