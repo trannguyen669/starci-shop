@@ -11,9 +11,7 @@ export const envSchema = z.object({
 
   JWT_SECRET: z.string().min(16),
 
-  LOG_LEVEL: z
-    .enum(['debug', 'info', 'warn', 'error'])
-    .default('info'),
+  LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 });
 
 export type Env = z.infer<typeof envSchema>;

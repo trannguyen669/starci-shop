@@ -257,6 +257,21 @@ health check passed
 
 Trong production/test, Pino phát log dạng JSON để các hệ thống như Loki, ELK hoặc CloudWatch dễ ingest.
 
+## Verification
+
+Các tiêu chí typed config, fail-fast, logger redact/JSON và request correlation có test tự động:
+
+- `src/config/env.spec.ts`: chứng minh env được validate/coerce và thiếu biến bắt buộc sẽ `process.exit(1)`.
+- `src/logger.spec.ts`: chứng minh Pino dùng `LOG_LEVEL`, production/test không bật pretty transport và có redact secret.
+- `src/middleware/request-id.middleware.spec.ts`: chứng minh middleware tái sử dụng `x-request-id`, set response header và giữ child logger trong `AsyncLocalStorage`.
+
+Chạy kiểm tra:
+
+```bash
+npm test
+npm run build
+```
+
 ## Scripts
 
 | Lệnh | Chức năng |

@@ -10,13 +10,13 @@ async function bootstrap() {
 
   logger.info('Environment validated');
 
+  const app = await NestFactory.create(AppModule, {
+    logger: false,
+  });
 
+  app.use(requestId);
 
-  const app = await NestFactory.create(AppModule);
-
-   app.use(requestId);
-
-  app.enableShutdownHooks();// tắt app có trật tự
+  app.enableShutdownHooks(); // tắt app có trật tự
 
   await app.listen(env.PORT);
 
@@ -28,4 +28,4 @@ async function bootstrap() {
   );
 }
 
-bootstrap();
+void bootstrap();

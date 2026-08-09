@@ -5,7 +5,7 @@ import { requestContext } from './context/request-context';
 
 const env = loadEnv();
 
-export const logger = pino({
+export const loggerOptions = {
   level: env.LOG_LEVEL,
 
   transport:
@@ -15,12 +15,10 @@ export const logger = pino({
         }
       : undefined,
 
-  redact: [
-    'req.headers.authorization',
-    '*.password',
-    '*.jwtSecret',
-  ],
-});
+  redact: ['req.headers.authorization', '*.password', '*.jwtSecret'],
+};
+
+export const logger = pino(loggerOptions);
 
 export function getLogger() {
   return requestContext.getStore() ?? logger;

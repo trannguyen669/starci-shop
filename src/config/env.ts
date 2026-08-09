@@ -1,4 +1,4 @@
-import 'dotenv/config';//đọc file .env và đưa các biến trong đó vào process.env
+import 'dotenv/config'; //đọc file .env và đưa các biến trong đó vào process.env
 
 import { envSchema, type Env } from './env.schema';
 
@@ -13,10 +13,7 @@ export function loadEnv(): Env {
   //lấy toàn bộ biến môi trường trong process.env rồi đưa vào envSchema.safeParse để kiểm tra
 
   if (!parsed.success) {
-    console.error(
-      'Invalid environment:',
-      parsed.error.issues,
-    );
+    console.error('Invalid environment:', parsed.error.issues);
 
     process.exit(1);
   }
