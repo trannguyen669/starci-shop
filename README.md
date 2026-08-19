@@ -290,16 +290,22 @@ npm run build
 
 ## Database
 
-Database được cấu hình trong `TypeOrmModule.forRootAsync()` tại `src/app.module.ts`.
+Database được cấu hình bằng TypeORM + PostgreSQL.
 
-Hiện tại app dùng:
+Nest runtime khởi tạo một `DataSource`/connection pool singleton lúc app boot thông qua `TypeOrmModule.forRootAsync()` trong `src/app.module.ts`. Các service inject `DataSource` từ Nest DI sẽ dùng chung pool này, không tạo connection mới theo từng request.
+
+Migration CLI dùng `AppDataSource` trong `src/data/database/data-source.ts`. Cả Nest runtime và migration CLI đều dùng chung cấu hình từ `createTypeOrmOptions()` trong `src/data/database/typeorm.options.ts`.
+
+Cấu hình hiện tại:
 
 ```ts
-autoLoadEntities: true
-synchronize: true
+synchronize: false
+extra: {
+  max: 10
+}
 ```
 
-`synchronize: true` tiện khi phát triển local, nhưng không nên bật ở production vì TypeORM có thể tự thay đổi schema database.
+Schema database phải đi qua migration versioned. Không dùng `synchronize: true` cho database dùng chung hoặc production.
 
 ## Graceful Shutdown
 
