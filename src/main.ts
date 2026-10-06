@@ -6,6 +6,7 @@ import { logger } from './logger';
 import { requestId } from './middleware/request-id.middleware';
 import { ValidationPipe } from '@nestjs/common';
 import { AllExceptionsFilter } from './http/all-exceptions.filter';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const env = loadEnv();
@@ -16,7 +17,7 @@ async function bootstrap() {
     logger: false,
   });
 
-  app.use(requestId);
+  app.setGlobalPrefix('api/v1');
 
   app.useGlobalPipes(
   new ValidationPipe({
@@ -27,6 +28,19 @@ async function bootstrap() {
 );
 
   app.useGlobalFilters(new AllExceptionsFilter());
+
+  app.use(requestId);
+
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('StarCi Shop')
+    .setDescription('StarCi Shop API description')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+
+  SwaggerModule.setup('docs', app, document);
 
   app.enableShutdownHooks(); // tắt app có trật tự
 
