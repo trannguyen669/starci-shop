@@ -17,6 +17,10 @@ const LINKS = [
     href: "/login",
     label: "Login",
   },
+  {
+    href: "/status",
+    label: "Status",
+  }
 ];
 
 export function HeaderNav() {
