@@ -7,6 +7,9 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { ErrorFallback } from "@/components/ui/error-fallback";
 import { ProductCardSkeleton } from "@/components/ui/product-card-skeleton";
+import { Button,} from "@/components/ui/button";
+
+import {notify,} from "@/lib/notify";
 
 function BrokenComponent() {
   const [mounted, setMounted] = useState(false);
@@ -87,6 +90,36 @@ export default function ShowcasePage() {
           )}
         </ErrorBoundary>
       </section>
+
+      <section className="flex flex-col gap-3">
+            <Typography type="h4">
+              Toast
+            </Typography>
+
+            <div className="flex gap-3">
+              <Button
+                variant="primary"
+                onPress={() =>
+                  notify.success(
+                    "Đã thêm vào giỏ",
+                  )
+                }
+              >
+                Toast thành công
+              </Button>
+
+              <Button
+                variant="danger-soft"
+                onPress={() =>
+                  notify.error(
+                    "Có lỗi xảy ra",
+                  )
+                }
+              >
+                Toast lỗi
+              </Button>
+            </div>
+          </section>
     </div>
   );
 }

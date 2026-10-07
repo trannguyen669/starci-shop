@@ -39,6 +39,7 @@ export default function RootLayout({
     <html
       lang="vi"
       className={openSans.variable}
+      suppressHydrationWarning
     >
       <body className="flex min-h-screen flex-col bg-background text-foreground">
         <Providers>

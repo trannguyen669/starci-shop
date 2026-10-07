@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Typography } from "@heroui/react";
 
+import { ThemeToggle } from "./theme-toggle";
+
 const LINKS = [
   {
     href: "/",
@@ -20,7 +22,7 @@ const LINKS = [
   {
     href: "/status",
     label: "Status",
-  }
+  },
 ];
 
 export function HeaderNav() {
@@ -38,32 +40,36 @@ export function HeaderNav() {
           </Typography>
         </Link>
 
-        <ul className="flex items-center gap-4 md:gap-6">
-          {LINKS.map((link) => {
-            const isActive =
-              pathname === link.href;
+        <div className="flex items-center gap-4">
+          <ul className="flex items-center gap-4 md:gap-6">
+            {LINKS.map((link) => {
+              const isActive =
+                pathname === link.href;
 
-            return (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  aria-current={
-                    isActive
-                      ? "page"
-                      : undefined
-                  }
-                  className={
-                    isActive
-                      ? "font-medium text-accent"
-                      : "text-muted transition-colors hover:text-foreground"
-                  }
-                >
-                  {link.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+              return (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    aria-current={
+                      isActive
+                        ? "page"
+                        : undefined
+                    }
+                    className={
+                      isActive
+                        ? "font-medium text-accent"
+                        : "text-muted transition-colors hover:text-foreground"
+                    }
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+
+          <ThemeToggle />
+        </div>
       </div>
     </nav>
   );
