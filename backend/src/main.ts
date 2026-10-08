@@ -17,6 +17,9 @@ async function bootstrap() {
     logger: false,
   });
 
+  app.enableCors({
+  origin: 'http://localhost:3001',}); 
+
   app.setGlobalPrefix('api/v1');
 
   app.useGlobalPipes(

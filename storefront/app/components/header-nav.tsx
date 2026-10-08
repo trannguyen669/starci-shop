@@ -23,6 +23,11 @@ const LINKS = [
     href: "/status",
     label: "Status",
   },
+
+  {
+    href: "/register",
+    label: "Register",
+  }
 ];
 
 export function HeaderNav() {

@@ -8,6 +8,9 @@ import { HealthController } from './http/health.controller';
 import { ProductController } from './http/product.controller';
 import { ProductService } from './domain/product.service';
 import { ProductRepository } from './data/product/product.repository';
+import { AuthController } from './http/auth.controller';
+import { AuthService } from './domain/auth.service';
+import { UserRepository } from './data/user/user.repository';
 
 @Module({
   imports: [
@@ -16,8 +19,8 @@ import { ProductRepository } from './data/product/product.repository';
     }),
   ],
 
-  controllers: [HealthController, ProductController],
+  controllers: [HealthController, ProductController, AuthController],
 
-  providers: [DbRepository, HealthService, ProductService, ProductRepository],
+  providers: [DbRepository, HealthService, ProductService, ProductRepository, UserRepository, AuthService],
 })
 export class AppModule {}

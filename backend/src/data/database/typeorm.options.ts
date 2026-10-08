@@ -2,6 +2,7 @@ import { DataSourceOptions } from 'typeorm';
 
 import { loadEnv } from '../../config/env';
 import { Product } from '../product/product.entity';
+import { User } from '../user/user.entity';
 
 export function createTypeOrmOptions(): DataSourceOptions {
   const env = loadEnv();
@@ -10,7 +11,7 @@ export function createTypeOrmOptions(): DataSourceOptions {
     type: 'postgres',
     url: env.DATABASE_URL,
 
-    entities: [Product],
+    entities: [Product,User],
 
     migrations: [__dirname + '/../migrations/*{.ts,.js}'],
 
