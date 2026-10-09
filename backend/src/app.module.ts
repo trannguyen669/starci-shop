@@ -15,6 +15,9 @@ import { AuthService } from './domain/auth.service';
 import { UserRepository } from './data/user/user.repository';
 import { loadEnv } from './config/env';
 import { JwtStrategy } from './http/jwt.strategy';
+import { RolesGuard } from './http/roles.guard';
+import { AdminController } from './http/admin.controller';
+import { RefreshTokenRepository } from './data/refresh-token/refresh-token.repository';
 
 const env = loadEnv();
 
@@ -35,8 +38,8 @@ const env = loadEnv();
     }),
   ],
 
-  controllers: [HealthController, ProductController, AuthController],
+  controllers: [HealthController, ProductController, AuthController, AdminController],
 
-  providers: [DbRepository, HealthService, ProductService, ProductRepository, UserRepository, AuthService, JwtStrategy],
+  providers: [DbRepository, HealthService, ProductService, ProductRepository, UserRepository,RefreshTokenRepository, AuthService, JwtStrategy,RolesGuard],
 })
 export class AppModule {}

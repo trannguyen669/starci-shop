@@ -7,6 +7,7 @@ import { requestId } from './middleware/request-id.middleware';
 import { ValidationPipe } from '@nestjs/common';
 import { AllExceptionsFilter } from './http/all-exceptions.filter';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const env = loadEnv();
@@ -18,7 +19,11 @@ async function bootstrap() {
   });
 
   app.enableCors({
-  origin: 'http://localhost:3001',}); 
+  origin: 'http://localhost:3001',
+  credentials: true,
+}); 
+
+  app.use(cookieParser());
 
   app.setGlobalPrefix('api/v1');
 

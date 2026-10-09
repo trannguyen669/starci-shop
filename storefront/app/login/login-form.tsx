@@ -1,8 +1,8 @@
 "use client";
 
 import {
-  useState,
   type FormEventHandler,
+  useState,
 } from "react";
 
 import {
@@ -33,12 +33,24 @@ import {
   notify,
 } from "@/lib/notify";
 
+type UserRole =
+  | "user"
+  | "admin";
+
+type AuthUser = {
+  id: string;
+  email: string;
+  role: UserRole;
+};
+
 type LoginResponse = {
   accessToken: string;
+  user: AuthUser;
 };
 
 export function LoginForm() {
-  const router = useRouter();
+  const router =
+    useRouter();
 
   const [email, setEmail] =
     useState("");
@@ -49,8 +61,10 @@ export function LoginForm() {
   const [error, setError] =
     useState("");
 
-  const [submitting, setSubmitting] =
-    useState(false);
+  const [
+    submitting,
+    setSubmitting,
+  ] = useState(false);
 
   const onSubmit:
     FormEventHandler<HTMLFormElement> =
@@ -74,9 +88,29 @@ export function LoginForm() {
             },
           );
 
+        // Access token:
+        // FE cần dùng để gọi
+        // protected APIs.
         localStorage.setItem(
           "accessToken",
           response.accessToken,
+        );
+
+        // Lưu thông tin user
+        // để UI biết role.
+        localStorage.setItem(
+          "user",
+          JSON.stringify(
+            response.user,
+          ),
+        );
+
+        // Báo cho HeaderNav biết
+        // trạng thái auth đã thay đổi.
+        window.dispatchEvent(
+          new Event(
+            "auth-changed",
+          ),
         );
 
         notify.success(
@@ -144,7 +178,9 @@ export function LoginForm() {
           <Button
             type="submit"
             variant="primary"
-            isDisabled={submitting}
+            isDisabled={
+              submitting
+            }
           >
             {submitting
               ? "Đang đăng nhập..."

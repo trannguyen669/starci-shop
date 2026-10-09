@@ -3,6 +3,7 @@ import { DataSourceOptions } from 'typeorm';
 import { loadEnv } from '../../config/env';
 import { Product } from '../product/product.entity';
 import { User } from '../user/user.entity';
+import { RefreshToken } from '../refresh-token/refresh-token.entity';
 
 export function createTypeOrmOptions(): DataSourceOptions {
   const env = loadEnv();
@@ -11,7 +12,7 @@ export function createTypeOrmOptions(): DataSourceOptions {
     type: 'postgres',
     url: env.DATABASE_URL,
 
-    entities: [Product,User],
+    entities: [Product,User,RefreshToken],
 
     migrations: [__dirname + '/../migrations/*{.ts,.js}'],
 

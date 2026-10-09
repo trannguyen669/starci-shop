@@ -13,17 +13,56 @@ export async function apiFetch<T>(
 ): Promise<T> {
   let response: Response;
 
+  const headers =
+    new Headers(init?.headers);
+
+  if (
+    init?.body
+    && !headers.has(
+      "Content-Type",
+    )
+  ) {
+    headers.set(
+      "Content-Type",
+      "application/json",
+    );
+  }
+
+  // Nếu đang chạy ở browser,
+  // lấy access token để gửi Bearer.
+  if (
+    typeof window !== "undefined"
+  ) {
+    const accessToken =
+      localStorage.getItem(
+        "accessToken",
+      );
+
+    if (
+      accessToken
+      && !headers.has(
+        "Authorization",
+      )
+    ) {
+      headers.set(
+        "Authorization",
+        `Bearer ${accessToken}`,
+      );
+    }
+  }
+
   try {
     response = await fetch(
       `${BASE_URL}${path}`,
       {
-        ...init,//lấy các tùy chọn do nơi gọi truyền vào
+        ...init,
 
-        headers: {
-          "Content-Type":
-            "application/json",
-          ...init?.headers,
-        },
+        headers,
+
+        // Quan trọng:
+        // browser gửi/nhận
+        // refresh-token cookie.
+        credentials: "include",
 
         cache: "no-store",
       },
@@ -31,7 +70,9 @@ export async function apiFetch<T>(
   } catch (cause) {
     throw new Error(
       `Cannot reach backend at ${BASE_URL}${path}`,
-      { cause },
+      {
+        cause,
+      },
     );
   }
 

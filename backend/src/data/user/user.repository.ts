@@ -54,4 +54,14 @@ export class UserRepository {
       )
       .getOne();// thực thi truy vấn và lấy kết quả đầu tiên
   }
+
+  findById(
+    id: string,
+  ) {
+    return this.dataSource
+      .getRepository(User)
+      .findOneBy({
+        id,
+      });
+  }
 }

@@ -14,10 +14,12 @@ import {
 import {
   loadEnv,
 } from '../config/env';
+import { UserRole } from 'src/data/user/user.entity';
 
 type JwtPayload = {
   sub: string;
   email: string;
+  role:UserRole;
 };
 
 @Injectable()
@@ -45,6 +47,7 @@ export class JwtStrategy extends PassportStrategy(
     return {
       id: payload.sub,
       email: payload.email,
+      role: payload.role,
     };
   }
 }

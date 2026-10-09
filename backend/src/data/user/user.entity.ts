@@ -5,6 +5,10 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
+export type UserRole =
+  | 'user'
+  | 'admin';
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -16,9 +20,16 @@ export class User {
   email!: string;
 
   @Column({
-    select: false,//lớp bảo vệ chống vô tình trả hash ra API.
+    select: false,// lớp bảo vệ chống vô tình trả ra hash mật khẩu khi truy vấn
   })
   passwordHash!: string;
+
+  @Column({
+    type: 'varchar',
+    length: 20,
+    default: 'user',
+  })
+  role!: UserRole;
 
   @CreateDateColumn({
     type: 'timestamptz',
