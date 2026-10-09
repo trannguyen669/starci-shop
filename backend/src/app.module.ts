@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
 
 import { createTypeOrmOptions } from './data/database/typeorm.options';
 import { DbRepository } from './data/db.repository';
@@ -11,16 +13,30 @@ import { ProductRepository } from './data/product/product.repository';
 import { AuthController } from './http/auth.controller';
 import { AuthService } from './domain/auth.service';
 import { UserRepository } from './data/user/user.repository';
+import { loadEnv } from './config/env';
+import { JwtStrategy } from './http/jwt.strategy';
+
+const env = loadEnv();
 
 @Module({
   imports: [
-    TypeOrmModule.forRootAsync({
-      useFactory: () => createTypeOrmOptions(),
+    TypeOrmModule.forRoot(
+      createTypeOrmOptions(),
+    ),
+
+    PassportModule,
+
+    JwtModule.register({
+      secret: env.JWT_SECRET,
+
+      signOptions: {
+        expiresIn: 15 * 60,
+      },
     }),
   ],
 
   controllers: [HealthController, ProductController, AuthController],
 
-  providers: [DbRepository, HealthService, ProductService, ProductRepository, UserRepository, AuthService],
+  providers: [DbRepository, HealthService, ProductService, ProductRepository, UserRepository, AuthService, JwtStrategy],
 })
 export class AppModule {}

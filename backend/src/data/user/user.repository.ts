@@ -1,9 +1,5 @@
-import {
-  Injectable,
-} from '@nestjs/common';
-import {
-  DataSource,
-} from 'typeorm';
+import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 
 import {
   User,
@@ -41,5 +37,21 @@ export class UserRepository {
       repository.create(data);
 
     return repository.save(user);
+  }
+
+  async findByEmailWithPasswordHash(
+    email: string,
+  ): Promise<User | null> {
+    const repository =
+      this.dataSource.getRepository(User);
+
+    return repository
+      .createQueryBuilder('user')// tạo 1 truy vấn bằng query builder
+      .addSelect('user.passwordHash')// thêm cột passwordHash vào truy vấn, vì nó đã được đánh dấu là select: false trong entity
+      .where(
+        'user.email = :email',
+        { email },
+      )
+      .getOne();// thực thi truy vấn và lấy kết quả đầu tiên
   }
 }
