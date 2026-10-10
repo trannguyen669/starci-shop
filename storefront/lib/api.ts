@@ -7,6 +7,19 @@ if (!BASE_URL) {
   );
 }
 
+export class ApiError
+  extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+  ) {
+    super(message);
+
+    this.name =
+      "ApiError";
+  }
+}
+
 export async function apiFetch<T>(
   path: string,
   init?: RequestInit,
@@ -14,8 +27,12 @@ export async function apiFetch<T>(
   let response: Response;
 
   const headers =
-    new Headers(init?.headers);
+    new Headers(
+      init?.headers,
+    );
 
+  // Chỉ set Content-Type JSON
+  // khi request có body.
   if (
     init?.body
     && !headers.has(
@@ -28,16 +45,19 @@ export async function apiFetch<T>(
     );
   }
 
-  // Nếu đang chạy ở browser,
-  // lấy access token để gửi Bearer.
+  // Chỉ browser mới có
+  // localStorage.
   if (
-    typeof window !== "undefined"
+    typeof window
+    !== "undefined"
   ) {
     const accessToken =
       localStorage.getItem(
         "accessToken",
       );
 
+    // Nếu đang có access token,
+    // tự gắn Bearer token.
     if (
       accessToken
       && !headers.has(
@@ -59,12 +79,14 @@ export async function apiFetch<T>(
 
         headers,
 
-        // Quan trọng:
-        // browser gửi/nhận
+        // Cho phép browser
+        // gửi/nhận httpOnly
         // refresh-token cookie.
-        credentials: "include",
+        credentials:
+          "include",
 
-        cache: "no-store",
+        cache:
+          "no-store",
       },
     );
   } catch (cause) {
@@ -76,8 +98,11 @@ export async function apiFetch<T>(
     );
   }
 
+  // Backend có response
+  // nhưng status không phải 2xx.
   if (!response.ok) {
-    throw new Error(
+    throw new ApiError(
+      response.status,
       `Request ${path} failed with ${response.status}`,
     );
   }
